@@ -45,7 +45,7 @@ beserta Similarity Score (0.0 – 1.0)
 | **Nama** | Perfume Dataset |
 | **Sumber** | [Kaggle — Ayush Ghawana](https://www.kaggle.com/datasets/ayushghawana/perfume-dataset) |
 | **Lisensi** | CC BY 4.0 (Attribution 4.0 International) |
-| **Jumlah Data** | 1.005 baris |
+| **Jumlah Data** | 1.004 baris |
 | **Jumlah Kolom** | 6 kolom |
 | **Missing Values** | 0 (tidak ada) |
 
@@ -88,7 +88,6 @@ final_project/
 │   ├── recommender.py             # Logika model rekomendasi
 │   └── app.py                     # Aplikasi Streamlit
 ├── requirements.txt               # Daftar dependencies
-├── implementation_plan.md         # Rencana implementasi
 └── README.md                      # File ini
 ```
 
