@@ -1,235 +1,183 @@
 # Fragrance Matchmaker — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
-
-**Goal:** Membangun sistem rekomendasi parfum berbasis Content-Based Filtering yang di-deploy sebagai aplikasi Streamlit interaktif.
-
-**Architecture:** User memilih 1 parfum favorit → sistem menghitung Cosine Similarity terhadap seluruh parfum di dataset → menampilkan Top-N parfum paling mirip berdasarkan fitur `type`, `category`, `target_audience`, dan `longevity`.
-
-**Tech Stack:** Python, Pandas, Scikit-learn (CountVectorizer, cosine_similarity), Matplotlib/Seaborn, Streamlit
-
-**Deadline:** 23 Mei 2026 | **Team:** Torikh Abdullah Naser & Alif Ilham Rhamadan
-
-**Dataset:** [Perfume Dataset — Kaggle (Ayush)](https://www.kaggle.com/datasets/ayushghawana/perfume-dataset) — 1.005 rows, 6 columns, 0 missing values.
+> **Informasi Umum & Deadline:**
+> *   **Deadline Tugas:** Sabtu, 23 Mei 2026 pukul 23:59 WIB
+> *   **Anggota Tim:**
+>     1. Torikh Abdullah Naser
+>     2. Alif Ilham Rhamadan
+>     3. Hasan Shofiyyurrahman
+> *   **Topik:** Sistem Rekomendasi Parfum (Content-Based Filtering)
+> *   **Repositori Git:** `https://github.com/Torikh42/final_project_DSBeginner.git`
 
 ---
 
-## Struktur Folder Final
+## 👥 Pembagian Tugas (Task Division)
+
+Untuk memaksimalkan efisiensi dan keahlian masing-masing anggota tim, berikut adalah pembagian tugas yang terstruktur:
+
+1. **Torikh Abdullah Naser (Project Coordinator & Integration)**
+   - **Tugas:** Project setup, EDA & visualisasi awal, koordinasi integrasi sistem, peninjauan unit test, deployment ke Streamlit Cloud, dan penyusunan berkas akhir (`README.md` & `link_aplikasi.txt`).
+   - **Kontribusi:** Phase 1, Phase 2, Phase 3 (selesai), Phase 6 (bersama tim).
+
+2. **Hasan Shofiyyurrahman (ML Backend & Recommender Engine)**
+   - **Tugas:** Menulis dan menguji engine sistem rekomendasi. Hasan akan mengimplementasikan model Content-Based Filtering menggunakan CountVectorizer & Cosine Similarity serta menulis unit test (`pytest`) untuk mengevaluasi akurasi dan robust-ness model.
+   - **Kontribusi:** Phase 4 (Recommender Engine & TDD Evaluation).
+
+3. **Alif Ilham Rhamadan (Frontend UI & Streamlit Design)**
+   - **Tugas:** Merancang antarmuka aplikasi Streamlit yang premium, mengimplementasikan Custom CSS (glassmorphism/dark mode), memetakan input sidebar (kategori, target audience, longevity) secara dinamis agar tidak terjadi *dead-ends*, dan menyambungkan input user dengan engine rekomendasi buatan Hasan.
+   - **Kontribusi:** Phase 5 (Premium Streamlit Web UI).
+
+---
+
+## 📁 Struktur Folder Final
+
+Struktur direktori proyek yang benar dan lengkap untuk memenuhi standar pengembangan:
 
 ```
 final_project/
 ├── data/
-│   └── Perfumes_dataset.csv
+│   ├── Perfumes_dataset.csv       # Dataset mentah asli dari Kaggle
+│   ├── perfumes_clean.csv         # Dataset bersih (output preprocessing)
+│   └── *.png                      # Gambar visualisasi hasil EDA
 ├── notebooks/
-│   └── eda_preprocessing.ipynb
+│   └── eda_preprocessing.ipynb    # Eksplorasi data awal & visualisasi
 ├── src/
-│   ├── recommender.py
-│   └── app.py
-├── requirements.txt
-└── README.md
+│   ├── preprocessing.py           # Pipeline pembersihan data & feature engineering
+│   ├── recommender.py             # Logika model rekomendasi (oleh Hasan)
+│   └── app.py                     # Aplikasi web interactive Streamlit (oleh Alif)
+├── tests/
+│   └── test_recommender.py        # Pengujian sistem rekomendasi dengan pytest (oleh Hasan)
+├── requirements.txt               # Daftar dependencies library Python
+├── link_aplikasi.txt              # File pengumpulan link (oleh Torikh)
+└── README.md                      # Dokumentasi utama proyek
 ```
 
 ---
 
-## Phase 1: Project Setup
+## 🟢 Phase 1: Project Setup & Environment [COMPLETED]
 
-- [ ] Buat struktur folder (`data/`, `notebooks/`, `src/`)
-- [ ] Copy `Perfumes_dataset.csv` dari `Tugas2/archive2/` ke `final_project/data/`
-- [ ] Buat `requirements.txt`: `pandas`, `scikit-learn`, `matplotlib`, `seaborn`, `streamlit`
-- [ ] `pip install -r requirements.txt`
+Langkah awal persiapan repositori dan library yang dibutuhkan untuk pengembangan:
 
----
-
-## Phase 2: EDA & Data Visualization
-
-> File: `notebooks/eda_preprocessing.ipynb`
-
-- [ ] **Load & inspeksi data**
-
-```python
-import pandas as pd
-df = pd.read_csv('../data/Perfumes_dataset.csv')
-print(df.shape)            # (1005, 6)
-print(df.info())
-print(df.isnull().sum())   # Harus 0 semua
-print(df.head(10))
-```
-
-- [ ] **Visualisasi distribusi 4 kolom kategorikal** (type, category, target_audience, longevity)
-
-```python
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-
-df['type'].value_counts().plot(kind='bar', ax=axes[0,0], color='skyblue')
-axes[0,0].set_title('Distribusi Tipe Parfum')
-
-df['category'].value_counts().plot(kind='barh', ax=axes[0,1], color='salmon')
-axes[0,1].set_title('Distribusi Kategori Aroma')
-
-df['target_audience'].value_counts().plot(kind='pie', ax=axes[1,0], autopct='%1.1f%%')
-axes[1,0].set_title('Target Audience')
-
-df['longevity'].value_counts().plot(kind='bar', ax=axes[1,1], color='mediumseagreen')
-axes[1,1].set_title('Distribusi Longevity')
-
-plt.tight_layout()
-plt.savefig('../data/eda_distributions.png', dpi=150)
-plt.show()
-```
-
-- [ ] **Top-10 Brand** (bar chart horizontal)
-- [ ] **Crosstab Category vs Longevity** (stacked bar chart)
+- [x] Buat struktur folder proyek (`data/`, `notebooks/`, `src/`)
+- [x] Pindahkan dataset `Perfumes_dataset.csv` ke dalam folder `data/`
+- [x] Buat file `requirements.txt` yang memuat semua library utama dan testing:
+  ```
+  pandas
+  scikit-learn
+  matplotlib
+  seaborn
+  streamlit
+  numpy
+  pytest
+  pytest-cov
+  ```
+- [x] Jalankan instalasi dependencies:
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 ---
 
-## Phase 3: Data Preprocessing
+## 🟢 Phase 2: Exploratory Data Analysis (EDA) [COMPLETED]
 
-> File: Lanjutan di `notebooks/eda_preprocessing.ipynb`
+Eksplorasi data untuk memahami sebaran fitur dan hubungan antar variabel:
 
-- [ ] **Standardisasi semua kolom teks ke lowercase**
-
-```python
-text_cols = ['brand', 'perfume', 'type', 'category', 'target_audience', 'longevity']
-for col in text_cols:
-    df[col] = df[col].str.strip().str.lower()
-```
-
-- [ ] **Cek & hapus duplikat**
-
-```python
-dupes = df.duplicated(subset=['brand', 'perfume']).sum()
-print(f'Duplikat: {dupes}')
-if dupes > 0:
-    df = df.drop_duplicates(subset=['brand', 'perfume']).reset_index(drop=True)
-```
-
-- [ ] **Buat kolom `combined_features`** (gabungan fitur untuk vektorisasi)
-
-```python
-df['combined_features'] = (
-    df['type'] + ' ' +
-    df['category'] + ' ' +
-    df['target_audience'] + ' ' +
-    df['longevity']
-)
-# Contoh output: "edp fresh scent male strong"
-```
-
-- [ ] **Simpan data bersih** ke `data/perfumes_clean.csv`
+- [x] **Load & Inspeksi Data**: Memeriksa dimensi (1.005 baris, 6 kolom), tipe data, dan memastikan tidak ada nilai kosong (*missing values*).
+- [x] **Visualisasi Distribusi 4 Kolom Kategorikal**: Membuat plot distribusi fitur `type`, `category`, `target_audience`, dan `longevity`.
+- [x] **Visualisasi Top-10 Brand**: Bar chart horizontal yang menampilkan brand dengan jumlah parfum terbanyak.
+- [x] **Crosstab Category vs Longevity**: Stacked bar chart yang menganalisis ketahanan wangi berdasarkan kategori aroma.
+- [x] **Penyimpanan Asset**: Menyimpan seluruh grafik visualisasi dalam format PNG ke folder `data/` untuk digunakan pada visualisasi README dan Web App.
 
 ---
 
-## Phase 4: Feature Engineering & Similarity Matrix
+## 🟢 Phase 3: Data Preprocessing & Pipeline [COMPLETED]
 
-> File: `src/recommender.py`
+Pembersihan data mentah agar siap diproses oleh algoritma machine learning, dikemas dalam script modular `src/preprocessing.py`:
 
-- [ ] **Fungsi `load_data()`** — Load CSV yang sudah bersih
-- [ ] **Fungsi `build_similarity_matrix()`** — CountVectorizer + Cosine Similarity
-
-```python
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-def build_similarity_matrix(df):
-    vectorizer = CountVectorizer()
-    feature_matrix = vectorizer.fit_transform(df['combined_features'])
-    cosine_sim = cosine_similarity(feature_matrix)
-    return cosine_sim
-```
-
-> **Kenapa CountVectorizer, bukan TF-IDF?** Data kita sudah berupa kata-kata kategori pendek dan bersih. TF-IDF lebih cocok untuk teks panjang (review/deskripsi).
-
-- [ ] **Fungsi `get_recommendations()`** — Input nama parfum, output Top-N DataFrame + similarity score
-
-```python
-def get_recommendations(perfume_name, df, cosine_sim, top_n=5):
-    idx = df[df['perfume'] == perfume_name.lower()].index[0]
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    sim_scores = sim_scores[1:top_n + 1]  # Skip diri sendiri
-
-    perfume_indices = [i[0] for i in sim_scores]
-    scores = [round(i[1], 4) for i in sim_scores]
-
-    result = df.iloc[perfume_indices][
-        ['brand', 'perfume', 'type', 'category', 'target_audience', 'longevity']
-    ].copy()
-    result['similarity_score'] = scores
-    result = result.reset_index(drop=True)
-    result.index += 1  # Ranking mulai dari 1
-    return result
-```
-
-- [ ] **Test di notebook** — Cari rekomendasi untuk "club de nuit intense man", pastikan hasilnya masuk akal (Woody Spicy lainnya muncul)
+- [x] **Standardisasi Teks**: Mengubah semua nilai teks kolom kategori menjadi *lowercase* dan membuang spasi berlebih (*trim whitespace*).
+- [x] **Penanganan Noise & Konsistensi**:
+  - Mengubah target audience agar konsisten: `men` ➔ `male`, `women` ➔ `female`.
+  - Mengelompokkan variasi ketahanan (*longevity*) menjadi 3 kategori utama: `light`, `medium`, dan `strong`.
+  - Mengganti nilai kosong atau string 'nan' dengan label `'unknown'` menggunakan numpy.
+- [x] **Deduplikasi Data**: Menghapus baris duplikat berdasarkan kombinasi nama brand dan parfum (`brand` & `perfume`) demi keakuratan rekomendasi.
+- [x] **Feature Engineering**: Membuat kolom baru bernama `'combined_features'` yang menggabungkan fitur `type`, `category`, `target_audience`, dan `longevity` dipisahkan dengan spasi (contoh: `"edp woody spicy male strong"`).
+- [x] **Ekspor Dataset Bersih**: Menyimpan hasil pembersihan ke file `data/perfumes_clean.csv`.
 
 ---
 
-## Phase 5: Streamlit Deployment
+## ⏳ Phase 4: Recommender Engine Development & TDD [Hasan's Job]
 
-> File: `src/app.py`
+Pembangunan logika rekomendasi menggunakan metode **Content-Based Filtering** dengan menerapkan pendekatan **Test-Driven Development (TDD)**:
 
-- [ ] **Buat UI Streamlit** dengan komponen:
-  - `st.set_page_config()` — judul "Fragrance Matchmaker", icon 🧴
-  - **Sidebar filters:** `st.selectbox` untuk Target Audience, Kategori Aroma, Longevity
-  - **Main area:** `st.selectbox` untuk pilih parfum (filtered)
-  - `st.slider` untuk jumlah rekomendasi (3-10)
-  - `st.metric` x4 menampilkan info parfum yang dipilih
-  - `st.button` "Cari Rekomendasi" → `st.dataframe` hasil Top-N
-  - Footer credit tim
+- [ ] **Persiapan Pengujian (`tests/test_recommender.py`)**:
+  Hasan membuat file unit test menggunakan `pytest` untuk memverifikasi beberapa skenario sebelum menulis kode model:
+  1. **Validasi Load Data**: Memastikan fungsi dapat membaca dataset dengan benar dan memuat kolom-kolom penting.
+  2. **Validasi Matriks Similarity**: Memastikan dimensi matriks kemiripan adalah $N \times N$, skor diagonal bernilai `1.0`, dan seluruh nilai berada di rentang `[0, 1]`.
+  3. **Akurasi Rekomendasi**: Menguji apakah parfum Woody Spicy merekomendasikan aroma serupa dengan skor tinggi.
+  4. **Pencegahan Self-Recommendation**: Memastikan sistem tidak merekomendasikan parfum input itu sendiri.
+  5. **Penanganan Case-Insensitivity**: Menguji apakah pencarian parfum "Armaf Club" sama hasilnya dengan "armaf club".
+  6. **Penanganan Input Tidak Valid**: Memastikan system menolak input yang tidak terdaftar dengan melempar `ValueError("parfum tidak ditemukan")`.
 
-- [ ] **Test lokal:** `streamlit run src/app.py`
-  - Pastikan filter bekerja
-  - Pastikan hasil rekomendasi terurut descending by similarity score
-  - Pastikan parfum Woody Spicy merekomendasikan Woody Spicy lainnya
+- [ ] **Implementasi Model (`src/recommender.py`)**:
+  Hasan mengimplementasikan fungsi-fungsi utama berikut di `src/recommender.py`:
+  *   `load_data(filepath)`: Memuat dataset bersih `data/perfumes_clean.csv`.
+  *   `build_similarity_matrix(df)`: Menggunakan `CountVectorizer` untuk mengubah `'combined_features'` menjadi representasi numerik, lalu menghitung matriks kemiripan menggunakan `cosine_similarity`.
+  *   `get_recommendations(perfume_name, df, cosine_sim, top_n)`: Mengembalikan DataFrame rekomendasi teratas yang diurutkan descending, mengecualikan parfum input, dan menambahkan skor kemiripan (`similarity_score`).
 
-- [ ] **Deploy ke Streamlit Cloud:**
-  1. Push ke GitHub
-  2. Buka [share.streamlit.io](https://share.streamlit.io)
-  3. Connect repo → pilih `src/app.py`
-  4. Deploy → salin link
-
----
-
-## Phase 6: Packaging & Pengumpulan
-
-- [ ] Buat `README.md` (judul, tim, dataset link, cara run, link app)
-- [ ] Buat `link_app.txt` berisi URL Streamlit Cloud
-- [ ] Siapkan folder: `FP_Torikh[NIM]_Alif[NIM]_Hasan[NIM]`
-- [ ] Upload ke tempat pengumpulan
+- [ ] **Eksekusi & Verifikasi**:
+  Menjalankan pengujian untuk memastikan model lolos 100% pengujian:
+  ```bash
+  python -m pytest tests/ -v --cov=src/
+  ```
 
 ---
 
-## Verification Plan
+## ⏳ Phase 5: Premium Streamlit Web UI [Alif's Job]
 
-### Automated
-```bash
-python -c "
-from src.recommender import load_data, build_similarity_matrix, get_recommendations
-df = load_data('data/perfumes_clean.csv')
-sim = build_similarity_matrix(df)
-result = get_recommendations('club de nuit intense man', df, sim, 5)
-assert len(result) == 5
-assert 'similarity_score' in result.columns
-print('ALL TESTS PASSED')
-"
-```
+Pembuatan aplikasi antarmuka interaktif yang premium, responsif, dan mudah digunakan:
 
-### Manual
-- Parfum Woody Spicy → rekomendasi mayoritas Woody Spicy ✓
-- Similarity score antara 0-1, terurut descending ✓
-- Filter sidebar mengubah daftar parfum yang tersedia ✓
+- [ ] **Arsitektur Antarmuka (`src/app.py`)**:
+  Alif membangun UI interaktif menggunakan Streamlit dengan komponen-komponen berikut:
+  *   `st.set_page_config()`: Mengatur judul halaman "Fragrance Matchmaker" dan favicon 🧴.
+  *   **Dynamic Dropdown Filter**: Menyediakan sidebar filter untuk `Target Audience`, `Kategori Aroma`, dan `Longevity`. Dropdown daftar parfum di halaman utama harus ter-filter secara dinamis agar pengguna tidak menemui *empty state/dead-ends*.
+  *   **Interactive Input**: Slider untuk menentukan jumlah rekomendasi (Top 3 sampai 10) dan tombol pencarian.
+  *   **Visual Elements (Premium Styling)**:
+    *   Mengintegrasikan Custom CSS untuk menghadirkan desain modern (glassmorphism cards, custom font Inter, dark mode aesthetic, dan animasi hover mikro).
+    *   Menampilkan metrik parfum pilihan menggunakan metric cards (`st.metric`) secara responsif.
+  *   **Hasil Rekomendasi**: Menampilkan tabel rekomendasi yang rapi, lengkap dengan ranking dan similarity score.
+- [ ] **Uji Coba Lokal**:
+  Menjalankan aplikasi secara lokal untuk memastikan integrasi backend model dan frontend berjalan lancar:
+  ```bash
+  streamlit run src/app.py
+  ```
 
 ---
 
-## Timeline
+## ⏳ Phase 6: Deployment & Packaging [Torikh & Tim]
 
-| Tanggal | Target |
-|---------|--------|
-| 15-16 Mei | Phase 1-2: Setup + EDA |
-| 17-18 Mei | Phase 3-4: Preprocessing + Similarity Matrix |
-| 19-20 Mei | Phase 5: Streamlit App |
-| 21-22 Mei | Phase 6: Deploy + Packaging |
-| **23 Mei** | **DEADLINE** |
+Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas:
+
+- [ ] **Deployment ke Streamlit Cloud**:
+  *   Push seluruh perubahan terbaru ke repositori GitHub.
+  *   Daftar/login ke [share.streamlit.io](https://share.streamlit.io).
+  *   Hubungkan repositori `final_project_DSBeginner`, arahkan file utama ke `src/app.py`, lalu klik **Deploy**.
+  *   Salin URL aplikasi publik yang dihasilkan.
+- [ ] **Pembuatan Dokumen Pengumpulan**:
+  *   **README.md**: Lengkapi deskripsi proyek, cara instalasi, penjelasan algoritma, screenshot UI, dan link aplikasi langsung.
+  *   **link_aplikasi.txt**: Buat file teks di root direktori yang berisi URL repositori GitHub dan URL aplikasi Streamlit Cloud yang sudah live.
+- [ ] **Final Code Push & Submit**:
+  *   Melakukan commit akhir dan mem-push seluruh file ke GitHub.
+  *   Mengumpulkan URL repositori GitHub dan link web app ke tempat pengumpulan tugas Study Club.
+
+---
+
+## 📅 Timeline Rencana Kerja
+
+| Tanggal | Target Output | Status | PIC |
+|---------|---------------|--------|-----|
+| **15-16 Mei** | Setup proyek, import dataset, & penyusunan notebook EDA | **🟢 SELESAI** | Torikh |
+| **17-18 Mei** | Modularisasi preprocessing script & pembuatan `perfumes_clean.csv` | **🟢 SELESAI** | Torikh |
+| **19-20 Mei** | Penulisan Unit Test (`tests/`) & Coding Model Rekomendasi (`recommender.py`) | **⏳ PROSES** | Hasan |
+| **20-21 Mei** | Coding Web App Streamlit (`app.py`) & Premium Glassmorphism styling | **⏳ PENDING** | Alif |
+| **22 Mei** | Integrasi Model-UI, Manual Testing, & Deployment Streamlit Cloud | **⏳ PENDING** | Tim |
+| **23 Mei** | Penyusunan `README.md` & `link_aplikasi.txt` (Deadline 23:59 WIB) | **⏳ PENDING** | Torikh |
