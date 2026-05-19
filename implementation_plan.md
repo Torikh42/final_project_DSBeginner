@@ -197,7 +197,7 @@ def get_recommendations(perfume_name, df, cosine_sim, top_n=5):
 
 - [ ] Buat `README.md` (judul, tim, dataset link, cara run, link app)
 - [ ] Buat `link_app.txt` berisi URL Streamlit Cloud
-- [ ] Siapkan folder: `FP_Torikh[NIM]_Alif[NIM]`
+- [ ] Siapkan folder: `FP_Torikh[NIM]_Alif[NIM]_Hasan[NIM]`
 - [ ] Upload ke tempat pengumpulan
 
 ---
