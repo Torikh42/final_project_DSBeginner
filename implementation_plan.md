@@ -105,29 +105,29 @@ Pembersihan data mentah agar siap diproses oleh algoritma machine learning, dike
 
 ---
 
-## ⏳ Phase 4: Recommender Engine Development & TDD [Hasan's Job]
+## 🟢 Phase 4: Recommender Engine Development & TDD [COMPLETED]
 
 Pembangunan logika rekomendasi menggunakan metode **Content-Based Filtering** dengan menerapkan pendekatan **Test-Driven Development (TDD)**:
 
-- [ ] **Persiapan Pengujian (`tests/test_recommender.py`)**:
+- [x] **Persiapan Pengujian (`tests/test_recommender.py`)** — 30 test cases:
   Hasan membuat file unit test menggunakan `pytest` untuk memverifikasi beberapa skenario sebelum menulis kode model:
-  1. **Validasi Load Data**: Memastikan fungsi dapat membaca dataset dengan benar dan memuat kolom-kolom penting.
-  2. **Validasi Matriks Similarity**: Memastikan dimensi matriks kemiripan adalah $N \times N$, skor diagonal bernilai `1.0`, dan seluruh nilai berada di rentang `[0, 1]`.
-  3. **Akurasi Rekomendasi**: Menguji apakah parfum Woody Spicy merekomendasikan aroma serupa dengan skor tinggi.
-  4. **Pencegahan Self-Recommendation**: Memastikan sistem tidak merekomendasikan parfum input itu sendiri.
-  5. **Penanganan Case-Insensitivity**: Menguji apakah pencarian parfum "Armaf Club" sama hasilnya dengan "armaf club".
-  6. **Penanganan Input Tidak Valid**: Memastikan system menolak input yang tidak terdaftar dengan melempar `ValueError("parfum tidak ditemukan")`.
+  1. **Validasi Load Data** (8 tests): Memastikan fungsi dapat membaca dataset dengan benar, memuat kolom-kolom penting, dan membersihkan anomali residual (header row leak, longevity/audience tidak standar).
+  2. **Validasi Matriks Similarity** (5 tests): Memastikan dimensi matriks kemiripan adalah $N \times N$, skor diagonal bernilai `1.0`, seluruh nilai berada di rentang `[0, 1]`, dan matriks simetris.
+  3. **Akurasi Rekomendasi** (7 tests): Menguji apakah parfum Woody Spicy & Floriental merekomendasikan aroma serupa dengan skor tinggi, urutan descending, dan jumlah sesuai top_n.
+  4. **Pencegahan Self-Recommendation** (2 tests): Memastikan sistem tidak merekomendasikan parfum input itu sendiri untuk 10+ parfum berbeda.
+  5. **Penanganan Case-Insensitivity** (3 tests): Menguji lowercase, UPPERCASE, Title Case, dan extra whitespace menghasilkan hasil identik.
+  6. **Penanganan Input Tidak Valid** (5 tests): Memastikan system menolak input yang tidak terdaftar, string kosong, spasi, dan nama parsial dengan melempar `ValueError("parfum tidak ditemukan")`.
 
-- [ ] **Implementasi Model (`src/recommender.py`)**:
+- [x] **Implementasi Model (`src/recommender.py`)**:
   Hasan mengimplementasikan fungsi-fungsi utama berikut di `src/recommender.py`:
-  *   `load_data(filepath)`: Memuat dataset bersih `data/perfumes_clean.csv`.
+  *   `load_data(filepath)`: Memuat dataset bersih `data/perfumes_clean.csv` + membersihkan 3 anomali residual (header row leak, longevity "6–8 hours", target_audience "gourmand").
   *   `build_similarity_matrix(df)`: Menggunakan `CountVectorizer` untuk mengubah `'combined_features'` menjadi representasi numerik, lalu menghitung matriks kemiripan menggunakan `cosine_similarity`.
   *   `get_recommendations(perfume_name, df, cosine_sim, top_n)`: Mengembalikan DataFrame rekomendasi teratas yang diurutkan descending, mengecualikan parfum input, dan menambahkan skor kemiripan (`similarity_score`).
 
-- [ ] **Eksekusi & Verifikasi**:
-  Menjalankan pengujian untuk memastikan model lolos 100% pengujian:
-  ```bash
-  python -m pytest tests/ -v --cov=src/
+- [x] **Eksekusi & Verifikasi** — ✅ 30/30 passed, 97% coverage:
+  ```
+  tests/test_recommender.py  30 passed in 17.21s
+  src/recommender.py         97% coverage (39 stmts, 1 miss)
   ```
 
 ---
@@ -177,7 +177,7 @@ Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas:
 |---------|---------------|--------|-----|
 | **15-16 Mei** | Setup proyek, import dataset, & penyusunan notebook EDA | **🟢 SELESAI** | Torikh |
 | **17-18 Mei** | Modularisasi preprocessing script & pembuatan `perfumes_clean.csv` | **🟢 SELESAI** | Torikh |
-| **19-20 Mei** | Penulisan Unit Test (`tests/`) & Coding Model Rekomendasi (`recommender.py`) | **⏳ PROSES** | Hasan |
+| **19-20 Mei** | Penulisan Unit Test (`tests/`) & Coding Model Rekomendasi (`recommender.py`) | **🟢 SELESAI** | Hasan |
 | **20-21 Mei** | Coding Web App Streamlit (`app.py`) & Premium Glassmorphism styling | **⏳ PENDING** | Alif |
 | **22 Mei** | Integrasi Model-UI, Manual Testing, & Deployment Streamlit Cloud | **⏳ PENDING** | Tim |
 | **23 Mei** | Penyusunan `README.md` & `link_aplikasi.txt` (Deadline 23:59 WIB) | **⏳ PENDING** | Torikh |
