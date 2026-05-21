@@ -42,6 +42,10 @@ venv.bak/
 .vscode/
 .idea/
 
+# Design Files
+createspace-DESIGN.md
+base64_design.txt
+
 # Data and Models
 # data/Perfumes_dataset.csv  
 # data/*.png                

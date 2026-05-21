@@ -132,11 +132,11 @@ Pembangunan logika rekomendasi menggunakan metode **Content-Based Filtering** de
 
 ---
 
-## ⏳ Phase 5: Premium Streamlit Web UI [Alif's Job]
+## 🟢 Phase 5: Premium Streamlit Web UI [Alif's Job] [COMPLETED]
 
 Pembuatan aplikasi antarmuka interaktif yang premium, responsif, dan mudah digunakan:
 
-- [ ] **Arsitektur Antarmuka (`src/app.py`)**:
+- [x] **Arsitektur Antarmuka (`src/app.py`)**:
   Alif membangun UI interaktif menggunakan Streamlit dengan komponen-komponen berikut:
   *   `st.set_page_config()`: Mengatur judul halaman "Fragrance Matchmaker" dan favicon 🧴.
   *   **Dynamic Dropdown Filter**: Menyediakan sidebar filter untuk `Target Audience`, `Kategori Aroma`, dan `Longevity`. Dropdown daftar parfum di halaman utama harus ter-filter secara dinamis agar pengguna tidak menemui *empty state/dead-ends*.
@@ -144,8 +144,8 @@ Pembuatan aplikasi antarmuka interaktif yang premium, responsif, dan mudah digun
   *   **Visual Elements (Premium Styling)**:
     *   Mengintegrasikan Custom CSS untuk menghadirkan desain modern (glassmorphism cards, custom font Inter, dark mode aesthetic, dan animasi hover mikro).
     *   Menampilkan metrik parfum pilihan menggunakan metric cards (`st.metric`) secara responsif.
-  *   **Hasil Rekomendasi**: Menampilkan tabel rekomendasi yang rapi, lengkap dengan ranking dan similarity score.
-- [ ] **Uji Coba Lokal**:
+    *   **Hasil Rekomendasi**: Menampilkan tabel rekomendasi yang rapi, lengkap dengan ranking dan similarity score.
+- [x] **Uji Coba Lokal**:
   Menjalankan aplikasi secara lokal untuk memastikan integrasi backend model dan frontend berjalan lancar:
   ```bash
   streamlit run src/app.py
@@ -178,6 +178,6 @@ Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas:
 | **15-16 Mei** | Setup proyek, import dataset, & penyusunan notebook EDA | **🟢 SELESAI** | Torikh |
 | **17-18 Mei** | Modularisasi preprocessing script & pembuatan `perfumes_clean.csv` | **🟢 SELESAI** | Torikh |
 | **19-20 Mei** | Penulisan Unit Test (`tests/`) & Coding Model Rekomendasi (`recommender.py`) | **🟢 SELESAI** | Hasan |
-| **20-21 Mei** | Coding Web App Streamlit (`app.py`) & Premium Glassmorphism styling | **⏳ PENDING** | Alif |
+| **20-21 Mei** | Coding Web App Streamlit (`app.py`) & Premium Glassmorphism styling | **🟢 SELESAI** | Alif |
 | **22 Mei** | Integrasi Model-UI, Manual Testing, & Deployment Streamlit Cloud | **⏳ PENDING** | Tim |
 | **23 Mei** | Penyusunan `README.md` & `link_aplikasi.txt` (Deadline 23:59 WIB) | **⏳ PENDING** | Torikh |
