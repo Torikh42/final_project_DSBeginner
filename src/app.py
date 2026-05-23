@@ -19,44 +19,6 @@ from recommender import load_data, build_similarity_matrix, get_recommendations
 # ─── Constants ───────────────────────────────────────────────────────────────
 DATA_PATH = os.path.join(_PROJECT_ROOT, "data", "perfumes_clean.csv")
 
-# ─── Aesthetic SVG Placeholders (No broken links, no wrong brands) ───────────
-import urllib.parse
-
-def get_placeholder_image(category: str, perfume_name: str) -> str:
-    """Return a deterministic, elegant SVG placeholder encoded as data URI."""
-    cat_lower = str(category).lower()
-    if 'floral' in cat_lower:
-        c1, c2 = '#fce7f3', '#fbcfe8'
-    elif 'woody' in cat_lower or 'wood' in cat_lower:
-        c1, c2 = '#fef3c7', '#fde68a'
-    elif 'fresh' in cat_lower or 'citrus' in cat_lower:
-        c1, c2 = '#e0f2fe', '#bae6fd'
-    elif 'oud' in cat_lower:
-        c1, c2 = '#ffedd5', '#fed7aa'
-    elif 'oriental' in cat_lower or 'amber' in cat_lower:
-        c1, c2 = '#fef08a', '#fde047'
-    else:
-        c1, c2 = '#f3f4f6', '#e5e7eb'
-
-    # Get initials (up to 2 chars) for the faint watermark
-    initials = ''.join([w[0] for w in str(perfume_name).split()[:2]]).upper()
-    if not initials: initials = "P"
-
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
-        <defs>
-            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="{c1}" />
-                <stop offset="100%" stop-color="{c2}" />
-            </linearGradient>
-        </defs>
-        <rect width="400" height="300" fill="url(#g)"/>
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Playfair Display, serif" font-size="90" font-style="italic" fill="rgba(12,10,9,0.06)">{initials}</text>
-    </svg>"""
-    
-    encoded = urllib.parse.quote(svg)
-    return f"data:image/svg+xml;utf8,{encoded}"
-
-
 # ─── Page Config ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Fragrance Matchmaker",
@@ -449,11 +411,7 @@ html, body, [class*="css"] {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
     margin-bottom: 3rem;
-    align-items: start;
-}
-/* Alternate vertical offset for organic gallery feel */
-.rec-card:nth-child(even) {
-    margin-top: 24px;
+    align-items: stretch;
 }
 .rec-card {
     background: var(--bg-card);
@@ -995,7 +953,6 @@ if search_clicked:
             for rank, (_, r) in enumerate(results.iterrows(), start=1):
                 score    = r['similarity_score']
                 bar_pct  = int(score * 100)
-                img_url  = get_placeholder_image(r['category'], r['perfume'])
 
                 # Category tag with subtle tint
                 cat_lower = r['category'].lower()
@@ -1023,14 +980,13 @@ if search_clicked:
                 )
 
                 cards_html += (
-                    f'<div class="rec-card">'
-                    f'  <div class="rec-img-wrapper">'
-                    f'    <span class="rec-rank">#{rank:02d}</span>'
-                    f'    <img class="rec-img" src="{img_url}" alt="{r["perfume"]} by {r["brand"]}" loading="lazy">'
-                    f'  </div>'
+                    f'<div class="rec-card" style="padding-top: 1rem;">'
                     f'  <div class="rec-body">'
-                    f'    <div class="rec-score-bar-track">'
-                    f'      <div class="rec-score-bar-fill" style="width:{bar_pct}%;"></div>'
+                    f'    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">'
+                    f'      <span class="rec-rank" style="position:static; padding:4px 10px; font-size:12px; font-weight:600; background:var(--gold-light); color:var(--gold); border:1px solid rgba(202,138,4,0.3); border-radius:999px;">#{rank:02d}</span>'
+                    f'      <div class="rec-score-bar-track" style="width:120px; margin-bottom:0;">'
+                    f'        <div class="rec-score-bar-fill" style="width:{bar_pct}%;"></div>'
+                    f'      </div>'
                     f'    </div>'
                     f'    <p class="rec-perfume">{r["perfume"].title()}</p>'
                     f'    <p class="rec-brand">{r["brand"]}</p>'
