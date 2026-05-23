@@ -64,14 +64,55 @@ html, body, [class*="css"] {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── Hide Streamlit chrome ── */
-#MainMenu, footer, header { visibility: hidden; }
+/* ── Hide Streamlit chrome (except collapsed sidebar control) ── */
+#MainMenu, footer {
+    visibility: hidden;
+}
+[data-testid="stHeader"] {
+    background-color: transparent !important;
+    pointer-events: none;
+}
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+[data-testid="collapsedControl"] {
+    visibility: visible !important;
+    pointer-events: auto;
+    top: 12px !important;
+    left: 16px !important;
+}
+/* Style the collapsed control (hamburger button) to match the luxury theme */
+[data-testid="collapsedControl"] button {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    transition: all 200ms ease !important;
+    box-shadow: var(--shadow-whisper) !important;
+}
+[data-testid="collapsedControl"] button:hover {
+    border-color: var(--gold) !important;
+    color: var(--gold) !important;
+    background-color: var(--gold-light) !important;
+}
 
 /* ── Main container ── */
+[data-testid="stAppViewBlockContainer"],
 .main .block-container {
-    padding: 0 3rem 5rem !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 5rem !important;
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
     max-width: 1320px;
     margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    [data-testid="stAppViewBlockContainer"],
+    .main .block-container {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
 }
 
 /* ───────────────────────────────────────────────────
