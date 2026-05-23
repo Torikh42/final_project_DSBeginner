@@ -518,6 +518,8 @@ html, body, [class*="css"] {
     margin-bottom: 14px;
 }
 .rec-tag {
+    display: inline-block;
+    white-space: nowrap;
     background: rgba(12,10,9,0.04);
     border: 1px solid var(--border);
     border-radius: 9999px;
@@ -886,8 +888,8 @@ with col_sel:
 with col_tag:
     match_row = df_view[df_view['perfume'] == selected_perfume].iloc[0]
     st.markdown(
-        f'<div style="padding-top:1.8rem;">'
-        f'<span class="rec-tag">{match_row["type"].upper()}</span>&nbsp;'
+        f'<div style="padding-top:1.8rem; display:flex; flex-wrap:wrap; gap:6px;">'
+        f'<span class="rec-tag">{match_row["type"].upper()}</span>'
         f'<span class="rec-tag" style="color:var(--gold);border-color:rgba(202,138,4,0.3);background:var(--gold-light);">{match_row["category"]}</span>'
         f'</div>',
         unsafe_allow_html=True
