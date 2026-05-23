@@ -126,6 +126,17 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] .block-container {
     padding: 2.5rem 1.5rem !important;
 }
+
+@media (max-width: 768px) {
+    [data-testid="stSidebar"] {
+        width: 300px !important;
+        min-width: 300px !important;
+        max-width: 300px !important;
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding: 2rem 1.25rem !important;
+    }
+}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stSlider label,
