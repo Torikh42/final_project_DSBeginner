@@ -16,8 +16,8 @@
 Untuk memaksimalkan efisiensi dan keahlian masing-masing anggota tim, berikut adalah pembagian tugas yang terstruktur:
 
 1. **Torikh Abdullah Naser (Project Coordinator & Integration)**
-   - **Tugas:** Project setup, EDA & visualisasi awal, koordinasi integrasi sistem, peninjauan unit test, deployment ke Streamlit Cloud, dan penyusunan berkas akhir (`README.md` & `link_aplikasi.txt`).
-   - **Kontribusi:** Phase 1, Phase 2, Phase 3 (selesai), Phase 6 (bersama tim).
+   - **Tugas:** Project setup, EDA & visualisasi awal, koordinasi integrasi sistem, peninjauan unit test, deployment ke Streamlit Cloud, dan penyusunan berkas akhir (`README.md`).
+   - **Kontribusi:** Phase 1, Phase 2, Phase 3 (selesai), Phase 6 (selesai).
 
 2. **Hasan Shofiyyurrahman (ML Backend & Recommender Engine)**
    - **Tugas:** Menulis dan menguji engine sistem rekomendasi. Hasan akan mengimplementasikan model Content-Based Filtering menggunakan CountVectorizer & Cosine Similarity serta menulis unit test (`pytest`) untuk mengevaluasi akurasi dan robust-ness model.
@@ -48,8 +48,7 @@ final_project/
 ├── tests/
 │   └── test_recommender.py        # Pengujian sistem rekomendasi dengan pytest (oleh Hasan)
 ├── requirements.txt               # Daftar dependencies library Python
-├── link_aplikasi.txt              # File pengumpulan link (oleh Torikh)
-└── README.md                      # Dokumentasi utama proyek
+└── README.md                      # Dokumentasi utama proyek & link pengumpulan
 ```
 
 ---
@@ -153,21 +152,17 @@ Pembuatan aplikasi antarmuka interaktif yang premium, responsif, dan mudah digun
 
 ---
 
-## ⏳ Phase 6: Deployment & Packaging [Torikh & Tim]
+## 🟢 Phase 6: Deployment & Packaging [COMPLETED]
 
-Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas:
+Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas telah diselesaikan:
 
-- [ ] **Deployment ke Streamlit Cloud**:
-  *   Push seluruh perubahan terbaru ke repositori GitHub.
-  *   Daftar/login ke [share.streamlit.io](https://share.streamlit.io).
-  *   Hubungkan repositori `final_project_DSBeginner`, arahkan file utama ke `src/app.py`, lalu klik **Deploy**.
-  *   Salin URL aplikasi publik yang dihasilkan.
-- [ ] **Pembuatan Dokumen Pengumpulan**:
-  *   **README.md**: Lengkapi deskripsi proyek, cara instalasi, penjelasan algoritma, screenshot UI, dan link aplikasi langsung.
-  *   **link_aplikasi.txt**: Buat file teks di root direktori yang berisi URL repositori GitHub dan URL aplikasi Streamlit Cloud yang sudah live.
-- [ ] **Final Code Push & Submit**:
-  *   Melakukan commit akhir dan mem-push seluruh file ke GitHub.
-  *   Mengumpulkan URL repositori GitHub dan link web app ke tempat pengumpulan tugas Study Club.
+- [x] **Deployment ke Streamlit Cloud**:
+  *   Berhasil di-deploy ke [https://fragrance-matchmaker.streamlit.app/](https://fragrance-matchmaker.streamlit.app/).
+- [x] **Pembuatan Dokumen Pengumpulan**:
+  *   **README.md**: Berhasil dilengkapi dengan deskripsi, cara instalasi, algoritma, dan link aplikasi langsung.
+  *   *Note: Pengumpulan tugas diputuskan menggunakan Link GitHub secara langsung agar lebih praktis dan bersih (tanpa perlu link_aplikasi.txt).*
+- [x] **Final Code Push & Submit**:
+  *   Semua perubahan terbaru sudah di-commit dan di-push ke GitHub.
 
 ---
 
@@ -179,5 +174,5 @@ Tahap akhir rilis aplikasi dan penyusunan berkas pengumpulan tugas:
 | **17-18 Mei** | Modularisasi preprocessing script & pembuatan `perfumes_clean.csv` | **🟢 SELESAI** | Torikh |
 | **19-20 Mei** | Penulisan Unit Test (`tests/`) & Coding Model Rekomendasi (`recommender.py`) | **🟢 SELESAI** | Hasan |
 | **20-21 Mei** | Coding Web App Streamlit (`app.py`) & Premium Glassmorphism styling | **🟢 SELESAI** | Alif |
-| **22 Mei** | Integrasi Model-UI, Manual Testing, & Deployment Streamlit Cloud | **⏳ PENDING** | Tim |
-| **23 Mei** | Penyusunan `README.md` & `link_aplikasi.txt` (Deadline 23:59 WIB) | **⏳ PENDING** | Torikh |
+| **22 Mei** | Integrasi Model-UI, Manual Testing, & Deployment Streamlit Cloud | **🟢 SELESAI** | Tim |
+| **23 Mei** | Penyusunan `README.md` & Pengumpulan via GitHub (Selesai sebelum deadline) | **🟢 SELESAI** | Torikh |

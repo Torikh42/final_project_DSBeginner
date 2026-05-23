@@ -162,7 +162,7 @@ Sistem mengambil baris yang sesuai dengan parfum pilihan user di matriks similar
 
 ## 🔗 Link Aplikasi
 
-> *(Diisi setelah deployment ke Streamlit Cloud)*
+> 🚀 **[https://fragrance-matchmaker.streamlit.app/](https://fragrance-matchmaker.streamlit.app/)**
 
 ---
 
