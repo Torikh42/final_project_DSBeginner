@@ -1,25 +1,63 @@
 """
-app.py — Premium Streamlit Web UI for Fragrance Matchmaker
-Designed by Alif Ilham Rhamadan (Phase 5)
-Design System: CreateSpace — Glassmorphism · Poppins · DM Sans · #E11D48
+app.py — Fragrance Matchmaker · Liquid Glass & Minimalist Luxury Edition
+Design System: Warm Off-White · Bodoni Moda · Jost · Champagne Gold #CA8A04
 """
 
 import os
 import sys
+import hashlib
 import streamlit as st
 import pandas as pd
 
-# ─── Path resolution: works both from project root and from src/ ───────────────
+# ─── Path resolution ────────────────────────────────────────────────────────
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_THIS_DIR)
 sys.path.insert(0, _THIS_DIR)
 
 from recommender import load_data, build_similarity_matrix, get_recommendations
 
-# ─── Constants ─────────────────────────────────────────────────────────────────
+# ─── Constants ───────────────────────────────────────────────────────────────
 DATA_PATH = os.path.join(_PROJECT_ROOT, "data", "perfumes_clean.csv")
 
-# ─── Page Config ───────────────────────────────────────────────────────────────
+# ─── Aesthetic SVG Placeholders (No broken links, no wrong brands) ───────────
+import urllib.parse
+
+def get_placeholder_image(category: str, perfume_name: str) -> str:
+    """Return a deterministic, elegant SVG placeholder encoded as data URI."""
+    cat_lower = str(category).lower()
+    if 'floral' in cat_lower:
+        c1, c2 = '#fce7f3', '#fbcfe8'
+    elif 'woody' in cat_lower or 'wood' in cat_lower:
+        c1, c2 = '#fef3c7', '#fde68a'
+    elif 'fresh' in cat_lower or 'citrus' in cat_lower:
+        c1, c2 = '#e0f2fe', '#bae6fd'
+    elif 'oud' in cat_lower:
+        c1, c2 = '#ffedd5', '#fed7aa'
+    elif 'oriental' in cat_lower or 'amber' in cat_lower:
+        c1, c2 = '#fef08a', '#fde047'
+    else:
+        c1, c2 = '#f3f4f6', '#e5e7eb'
+
+    # Get initials (up to 2 chars) for the faint watermark
+    initials = ''.join([w[0] for w in str(perfume_name).split()[:2]]).upper()
+    if not initials: initials = "P"
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+        <defs>
+            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="{c1}" />
+                <stop offset="100%" stop-color="{c2}" />
+            </linearGradient>
+        </defs>
+        <rect width="400" height="300" fill="url(#g)"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Playfair Display, serif" font-size="90" font-style="italic" fill="rgba(12,10,9,0.06)">{initials}</text>
+    </svg>"""
+    
+    encoded = urllib.parse.quote(svg)
+    return f"data:image/svg+xml;utf8,{encoded}"
+
+
+# ─── Page Config ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Fragrance Matchmaker",
     page_icon="🧴",
@@ -27,346 +65,493 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── CreateSpace Design System CSS ─────────────────────────────────────────────
+# ─── Liquid Glass & Minimalist Luxury CSS ────────────────────────────────────
 st.markdown("""
 <style>
-/* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Fira+Code:wght@400&display=swap');
+/* ── Google Fonts: Playfair Display (editorial) + Inter (functional) ── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
 
-/* ── CSS Variables (CreateSpace tokens) ── */
+/* ── Design Tokens ── */
 :root {
-    --color-primary:   #E11D48;
-    --color-secondary: #2563EB;
-    --color-tertiary:  #FACC15;
-    --color-success:   #16A34A;
-    --color-warning:   #D97706;
-    --color-error:     #DC2626;
-    --color-info:      #2563EB;
-    --surface-base:    #0F0F14;
-    --surface-card:    rgba(255,255,255,0.06);
-    --surface-glass:   rgba(255,255,255,0.10);
-    --border-glass:    rgba(255,255,255,0.15);
-    --text-primary:    #F9FAFB;
-    --text-secondary:  #9CA3AF;
-    --text-muted:      #6B7280;
-    --shadow-glass: 0 8px 32px rgba(0,0,0,0.40);
-    --shadow-md:    0 4px 16px rgba(0,0,0,0.30);
-    --shadow-color: 0 8px 24px rgba(225,29,72,0.35);
+    --bg:             #FAFAF9;
+    --bg-card:        rgba(255,255,255,0.72);
+    --bg-sidebar:     rgba(250,250,249,0.96);
+    --glass-blur:     blur(20px);
+    --border:         rgba(12,10,9,0.08);
+    --border-hover:   rgba(202,138,4,0.35);
+    --text-primary:   #0C0A09;
+    --text-secondary: #44403C;
+    --text-muted:     #78716C;
+    --gold:           #CA8A04;
+    --gold-light:     rgba(202,138,4,0.12);
+    --gold-glow:      0 8px 32px rgba(202,138,4,0.18);
+    --shadow-whisper: 0 2px 24px rgba(12,10,9,0.06);
+    --shadow-card:    0 4px 32px rgba(12,10,9,0.08);
+    --shadow-hover:   0 16px 48px rgba(12,10,9,0.12);
+    --radius-sm:      8px;
+    --radius-md:      16px;
+    --radius-lg:      24px;
+    --radius-xl:      32px;
 }
 
-/* ── Global reset & dark mode ── */
+/* ── Global Reset ── */
 html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-    background-color: var(--surface-base) !important;
+    font-family: 'Inter', sans-serif !important;
+    background-color: var(--bg) !important;
     color: var(--text-primary) !important;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* ── Streamlit main container ── */
-.main .block-container {
-    padding: 2rem 2.5rem 4rem !important;
-    max-width: 1280px;
-}
-
-/* ── Hide default Streamlit chrome ── */
+/* ── Hide Streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
 
-/* ── Sidebar ── */
-[data-testid="stSidebar"] {
-    background: rgba(15, 15, 20, 0.95) !important;
-    border-right: 1px solid var(--border-glass) !important;
-}
-[data-testid="stSidebar"] .block-container {
-    padding: 2rem 1.25rem !important;
+/* ── Main container ── */
+.main .block-container {
+    padding: 0 3rem 5rem !important;
+    max-width: 1320px;
+    margin: 0 auto;
 }
 
-/* ── Sidebar labels & text ── */
+/* ───────────────────────────────────────────────────
+   SIDEBAR
+─────────────────────────────────────────────────── */
+[data-testid="stSidebar"] {
+    background: var(--bg-sidebar) !important;
+    border-right: 1px solid var(--border) !important;
+    backdrop-filter: var(--glass-blur);
+}
+[data-testid="stSidebar"] .block-container {
+    padding: 2.5rem 1.5rem !important;
+}
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stSlider label,
 [data-testid="stSidebar"] p {
-    color: var(--text-secondary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.04em;
+    color: var(--text-muted) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-/* ── Selectbox & input fields ── */
+/* ───────────────────────────────────────────────────
+   SELECTBOX & INPUTS — Minimalist underline style
+─────────────────────────────────────────────────── */
 [data-testid="stSelectbox"] > div > div,
 [data-testid="stMultiSelect"] > div > div {
-    background: var(--surface-glass) !important;
-    border: 1.5px solid var(--border-glass) !important;
-    border-radius: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    border-radius: 0 !important;
     color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 14px !important;
-    backdrop-filter: blur(16px);
-    transition: border-color 150ms ease;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    box-shadow: none !important;
+    transition: border-color 200ms ease !important;
+    padding-left: 0 !important;
 }
+[data-testid="stSelectbox"] > div > div:focus-within,
 [data-testid="stSelectbox"] > div > div:hover {
-    border-color: rgba(255,255,255,0.3) !important;
+    border-bottom-color: var(--gold) !important;
+    box-shadow: none !important;
 }
-[data-testid="stSelectbox"] > div > div:focus-within {
-    border-color: var(--color-secondary) !important;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.35) !important;
+
+/* Sidebar selectbox get subtle card styling */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
+    background: rgba(255,255,255,0.6) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
 }
 
 /* ── Slider ── */
 [data-testid="stSlider"] > div > div > div > div {
-    background: var(--color-primary) !important;
+    background: var(--gold) !important;
 }
 [data-testid="stSlider"] [data-testid="stThumbValue"] {
-    background: var(--color-primary) !important;
+    background: var(--gold) !important;
     color: #fff !important;
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 12px !important;
 }
 
-/* ── Primary Button ── */
+/* ── Primary Button — Almost Black, gold on hover ── */
 .stButton > button {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #be123c 100%) !important;
-    color: #ffffff !important;
+    background: var(--text-primary) !important;
+    color: var(--bg) !important;
     border: none !important;
-    border-radius: 8px !important;
-    font-family: 'Poppins', sans-serif !important;
-    font-size: 15px !important;
+    border-radius: var(--radius-md) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.02em;
-    padding: 0.65rem 1.8rem !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.75rem 2rem !important;
     width: 100% !important;
-    height: 48px !important;
+    height: 52px !important;
     cursor: pointer;
-    transition: all 150ms ease !important;
-    box-shadow: var(--shadow-color) !important;
+    transition: all 250ms cubic-bezier(0.25,0.46,0.45,0.94) !important;
+    box-shadow: var(--shadow-card) !important;
 }
 .stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 12px 32px rgba(225,29,72,0.50) !important;
+    background: var(--gold) !important;
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: var(--gold-glow) !important;
+    color: #fff !important;
 }
 .stButton > button:active {
-    transform: translateY(0px) !important;
+    transform: translateY(0) scale(1) !important;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   HERO HEADER
-───────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   NAV BAR  (top floating glass bar)
+─────────────────────────────────────────────────── */
+.fm-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(250,250,249,0.85);
+    backdrop-filter: var(--glass-blur);
+}
+.fm-navbar-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+.fm-navbar-brand span {
+    color: var(--gold);
+}
+.fm-navbar-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gold-light);
+    border: 1px solid rgba(202,138,4,0.25);
+    border-radius: 9999px;
+    padding: 5px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ───────────────────────────────────────────────────
+   HERO SECTION — Cinematic, editorial
+─────────────────────────────────────────────────── */
 .hero-wrapper {
-    background: linear-gradient(135deg,
-        rgba(225,29,72,0.18) 0%,
-        rgba(37,99,235,0.12) 60%,
-        rgba(250,204,21,0.08) 100%);
-    border: 1px solid var(--border-glass);
-    border-radius: 24px;
-    padding: 3rem 3.5rem;
-    margin-bottom: 2.5rem;
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-glass);
     position: relative;
+    padding: 1rem 0 1.5rem;
+    margin-bottom: 2rem;
     overflow: hidden;
 }
+/* Organic gradient orbs behind the title */
 .hero-wrapper::before {
     content: '';
     position: absolute;
-    width: 420px; height: 420px;
-    background: radial-gradient(circle, rgba(225,29,72,0.22) 0%, transparent 70%);
+    width: 560px; height: 560px;
+    background: radial-gradient(circle, rgba(202,138,4,0.10) 0%, transparent 65%);
     top: -120px; right: -80px;
     pointer-events: none;
+    animation: orb-float 8s ease-in-out infinite;
 }
 .hero-wrapper::after {
     content: '';
     position: absolute;
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%);
-    bottom: -100px; left: -60px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(12,10,9,0.05) 0%, transparent 65%);
+    bottom: -80px; left: -60px;
     pointer-events: none;
+    animation: orb-float 12s ease-in-out infinite reverse;
 }
-.hero-badge {
+@keyframes orb-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(12px, -20px) scale(1.05); }
+    66%       { transform: translate(-8px, 10px) scale(0.97); }
+}
+.hero-eyebrow {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.hero-eyebrow::after {
+    content: '';
+    flex: 0 0 40px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.4;
+}
+.hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(48px, 6vw, 80px);
+    font-weight: 600;
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    margin: 0 0 1.5rem 0;
+}
+.hero-title em {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+.hero-subtitle {
+    font-family: 'Jost', sans-serif;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 560px;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+.hero-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+    margin: 1.5rem 0 0;
+}
+
+/* ───────────────────────────────────────────────────
+   SELECTED PERFUME — Liquid Glass Profile Card
+─────────────────────────────────────────────────── */
+.profile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem 3rem;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(202,138,4,0.4), transparent);
+}
+.profile-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+}
+.profile-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+.profile-brand {
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 0 2rem 0;
+}
+.profile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.profile-chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(225,29,72,0.15);
-    border: 1px solid rgba(225,29,72,0.35);
+    background: rgba(12,10,9,0.04);
+    border: 1px solid var(--border);
     border-radius: 9999px;
-    padding: 4px 14px;
-    font-family: 'DM Sans', sans-serif;
+    padding: 6px 16px;
+    font-family: 'Jost', sans-serif;
     font-size: 12px;
-    font-weight: 600;
-    color: #fb7185;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 1rem;
-}
-.hero-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 52px;
-    font-weight: 800;
-    line-height: 1.05;
-    background: linear-gradient(135deg, #f9fafb 0%, #e11d48 60%, #2563eb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0 0 1rem 0;
-}
-.hero-subtitle {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 18px;
-    font-weight: 400;
+    font-weight: 500;
     color: var(--text-secondary);
-    line-height: 1.6;
-    max-width: 640px;
-    margin: 0;
+    letter-spacing: 0.04em;
+}
+.profile-chip.gold {
+    background: var(--gold-light);
+    border-color: rgba(202,138,4,0.3);
+    color: var(--gold);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   METRIC CARDS — Selected Perfume Info
-───────────────────────────────────────────────────────────────────────────── */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+/* ───────────────────────────────────────────────────
+   SECTION TITLE
+─────────────────────────────────────────────────── */
+.section-header {
+    display: flex;
+    align-items: baseline;
     gap: 16px;
     margin-bottom: 2rem;
 }
-.metric-card {
-    background: var(--surface-glass);
-    border: 1px solid var(--border-glass);
-    border-radius: 16px;
-    padding: 20px 24px;
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-glass);
-    transition: transform 200ms ease, box-shadow 200ms ease;
-    position: relative;
-    overflow: hidden;
-}
-.metric-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
-.metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 3px;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    border-radius: 16px 16px 0 0;
-}
-.metric-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 8px;
-}
-.metric-value {
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    text-transform: capitalize;
-}
-.metric-icon {
-    font-size: 22px;
-    margin-bottom: 8px;
-    display: block;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   SECTION HEADER
-───────────────────────────────────────────────────────────────────────────── */
-.section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-glass);
-}
 .section-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 24px;
-    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 500;
     color: var(--text-primary);
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+.section-subtitle {
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
     margin: 0;
 }
 .section-count {
-    background: rgba(225,29,72,0.15);
-    border: 1px solid rgba(225,29,72,0.3);
+    display: inline-flex;
+    align-items: center;
+    background: var(--gold-light);
+    border: 1px solid rgba(202,138,4,0.25);
     border-radius: 9999px;
-    padding: 2px 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
+    padding: 2px 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
     font-weight: 600;
-    color: #fb7185;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+    margin-left: auto;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RECOMMENDATION CARDS
-───────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   RECOMMENDATION CARDS — Asymmetric gallery grid
+─────────────────────────────────────────────────── */
 .rec-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
+    align-items: start;
+}
+/* Alternate vertical offset for organic gallery feel */
+.rec-card:nth-child(even) {
+    margin-top: 24px;
 }
 .rec-card {
-    background: var(--surface-card);
-    border: 1px solid var(--border-glass);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-glass);
-    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
-    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     overflow: hidden;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-whisper);
+    transition: transform 300ms cubic-bezier(0.25,0.46,0.45,0.94),
+                box-shadow 300ms ease,
+                border-color 300ms ease;
+    cursor: pointer;
+    position: relative;
 }
 .rec-card:hover {
-    transform: scale(1.02);
-    box-shadow: var(--shadow-md);
-    border-color: rgba(225,29,72,0.4);
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--border-hover);
 }
+/* Cinematic image area — "bleeds" from top */
+.rec-img-wrapper {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+.rec-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 600ms cubic-bezier(0.25,0.46,0.45,0.94);
+    filter: saturate(0.85) brightness(0.97);
+}
+.rec-card:hover .rec-img {
+    transform: scale(1.06);
+}
+/* Gradient scrim over image */
+.rec-img-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(to top, var(--bg-card), transparent);
+    pointer-events: none;
+}
+/* Rank badge floats on image */
 .rec-rank {
     position: absolute;
-    top: 16px; right: 16px;
-    background: linear-gradient(135deg, var(--color-primary), #be123c);
-    color: #fff;
-    font-family: 'Poppins', sans-serif;
-    font-size: 12px;
+    top: 14px;
+    left: 14px;
+    z-index: 2;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
     font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    background: rgba(250,250,249,0.92);
+    border: 1px solid var(--border);
     border-radius: 9999px;
-    padding: 3px 10px;
-    letter-spacing: 0.04em;
+    padding: 4px 12px;
+    backdrop-filter: blur(8px);
 }
-.rec-score-bar-wrap {
-    background: rgba(255,255,255,0.08);
+/* Card body */
+.rec-body {
+    padding: 20px 22px 22px;
+}
+/* Similarity score bar */
+.rec-score-bar-track {
+    height: 2px;
+    background: var(--border);
     border-radius: 9999px;
-    height: 5px;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     overflow: hidden;
 }
-.rec-score-bar {
-    height: 5px;
+.rec-score-bar-fill {
+    height: 2px;
     border-radius: 9999px;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    transition: width 0.6s ease;
+    background: linear-gradient(90deg, var(--text-muted), var(--gold));
+    transition: width 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
 }
 .rec-perfume {
-    font-family: 'Poppins', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 500;
     color: var(--text-primary);
     margin: 0 0 4px 0;
-    line-height: 1.3;
-    padding-right: 48px; /* space for rank badge */
+    line-height: 1.25;
+    letter-spacing: -0.005em;
 }
 .rec-brand {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-primary);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     margin: 0 0 16px 0;
-    opacity: 0.85;
 }
 .rec-tags {
     display: flex;
@@ -375,125 +560,146 @@ html, body, [class*="css"] {
     margin-bottom: 14px;
 }
 .rec-tag {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(12,10,9,0.04);
+    border: 1px solid var(--border);
     border-radius: 9999px;
     padding: 3px 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
     font-weight: 500;
     color: var(--text-secondary);
-    text-transform: capitalize;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.rec-score-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
 }
 .rec-score-label {
-    font-family: 'Fira Code', monospace;
-    font-size: 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
     color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 .rec-score-val {
-    font-family: 'Fira Code', monospace;
+    font-family: 'Jost', sans-serif;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-tertiary);
+    color: var(--gold);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   FULL TABLE VIEW
-───────────────────────────────────────────────────────────────────────────── */
-.table-wrapper {
-    background: var(--surface-glass);
-    border: 1px solid var(--border-glass);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-glass);
-    margin-bottom: 2rem;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   EMPTY / WELCOME STATE
-───────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   WELCOME / IDLE STATE
+─────────────────────────────────────────────────── */
 .welcome-box {
-    background: var(--surface-glass);
-    border: 1px dashed var(--border-glass);
-    border-radius: 24px;
-    padding: 4rem 2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 6rem 2rem;
     text-align: center;
-    backdrop-filter: blur(16px);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-whisper);
+    margin: 2rem 0;
 }
-.welcome-emoji {
-    font-size: 64px;
-    display: block;
-    margin-bottom: 1rem;
-    animation: float 3s ease-in-out infinite;
+.welcome-icon {
+    width: 64px; height: 64px;
+    margin: 0 auto 1.5rem;
+    opacity: 0.18;
+    animation: icon-float 4s ease-in-out infinite;
 }
-@keyframes float {
+@keyframes icon-float {
     0%, 100% { transform: translateY(0); }
     50%       { transform: translateY(-10px); }
 }
 .welcome-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 500;
     color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.75rem 0;
 }
 .welcome-sub {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Jost', sans-serif;
     font-size: 16px;
+    font-weight: 300;
     color: var(--text-secondary);
-    margin: 0;
-    line-height: 1.6;
+    line-height: 1.7;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    SIDEBAR BRANDING
-───────────────────────────────────────────────────────────────────────────── */
+─────────────────────────────────────────────────── */
 .sidebar-brand {
-    font-family: 'Poppins', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #E11D48, #2563EB);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 4px;
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
     display: block;
+    margin-bottom: 2px;
 }
 .sidebar-tagline {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
     color: var(--text-muted);
-    margin-bottom: 2rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     display: block;
+    margin-bottom: 2rem;
 }
 .sidebar-divider {
     border: none;
-    border-top: 1px solid var(--border-glass);
+    border-top: 1px solid var(--border);
     margin: 1.5rem 0;
 }
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   INFO CHIP
-───────────────────────────────────────────────────────────────────────────── */
+.sidebar-section-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: block;
+}
 .info-chip {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    background: rgba(37,99,235,0.12);
-    border: 1px solid rgba(37,99,235,0.25);
+    gap: 6px;
+    background: rgba(12,10,9,0.04);
+    border: 1px solid var(--border);
     border-radius: 9999px;
-    padding: 4px 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
+    padding: 5px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
     font-weight: 500;
-    color: #93c5fd;
-    margin-bottom: 1rem;
+    color: var(--text-secondary);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   DATAFRAME OVERRIDE
-───────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   TABLE WRAPPER
+─────────────────────────────────────────────────── */
+.table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-whisper);
+    margin-bottom: 2rem;
+}
+
+/* ── Dataframe ── */
 [data-testid="stDataFrame"] {
     border-radius: 12px !important;
     overflow: hidden;
@@ -501,121 +707,177 @@ html, body, [class*="css"] {
 
 /* ── Streamlit metric override ── */
 [data-testid="stMetric"] {
-    background: var(--surface-glass) !important;
-    border: 1px solid var(--border-glass) !important;
-    border-radius: 16px !important;
-    padding: 20px 24px !important;
-    backdrop-filter: blur(16px);
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 1.5rem !important;
+    backdrop-filter: var(--glass-blur);
 }
 [data-testid="stMetricLabel"] {
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 10px !important;
     color: var(--text-muted) !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
+    letter-spacing: 0.12em !important;
 }
 [data-testid="stMetricValue"] {
-    font-family: 'Poppins', sans-serif !important;
-    font-size: 22px !important;
-    font-weight: 700 !important;
+    font-family: 'Playfair Display', serif !important;
+    font-size: 24px !important;
+    font-weight: 500 !important;
     color: var(--text-primary) !important;
+}
+
+/* ── Spinner text ── */
+[data-testid="stSpinner"] p {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+    letter-spacing: 0.06em !important;
+}
+
+/* ── Expander ── */
+[data-testid="stExpander"] {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--bg-card) !important;
+    backdrop-filter: var(--glass-blur);
+}
+
+/* ── Alert/warning ── */
+[data-testid="stAlert"] {
+    border-radius: var(--radius-md) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* ── Page load entrance animation ── */
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.hero-wrapper, .profile-card, .rec-grid, .welcome-box {
+    animation: fade-up 0.5s cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+.rec-card:nth-child(1) { animation: fade-up 0.4s 0.05s ease both; }
+.rec-card:nth-child(2) { animation: fade-up 0.4s 0.10s ease both; }
+.rec-card:nth-child(3) { animation: fade-up 0.4s 0.15s ease both; }
+.rec-card:nth-child(4) { animation: fade-up 0.4s 0.20s ease both; }
+.rec-card:nth-child(5) { animation: fade-up 0.4s 0.25s ease both; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ─── Load data & build model (cached) ──────────────────────────────────────────
+# ─── Load data & model (cached) ──────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def get_data():
     df = load_data(DATA_PATH)
     cosine_sim = build_similarity_matrix(df)
     return df, cosine_sim
 
-
 @st.cache_data(show_spinner=False)
 def get_unique_values(df):
-    audiences  = sorted(df['target_audience'].dropna().unique().tolist())
-    categories = sorted(df['category'].dropna().unique().tolist())
+    audiences   = sorted(df['target_audience'].dropna().unique().tolist())
+    categories  = sorted(df['category'].dropna().unique().tolist())
     longevities = sorted(df['longevity'].dropna().unique().tolist())
     return audiences, categories, longevities
 
 
-# ─── Load ──────────────────────────────────────────────────────────────────────
-with st.spinner("🧴 Memuat dataset parfum..."):
+# ─── Load ────────────────────────────────────────────────────────────────────
+with st.spinner("Memuat koleksi parfum..."):
     df_full, cosine_sim = get_data()
 
 audiences, categories, longevities = get_unique_values(df_full)
 
-# ─── HERO HEADER ───────────────────────────────────────────────────────────────
+
+# ─── NAVBAR ──────────────────────────────────────────────────────────────────
 st.markdown("""
-<div class="hero-wrapper">
-    <div class="hero-badge">✨ AI-Powered · Content-Based Filtering</div>
-    <h1 class="hero-title">Fragrance<br>Matchmaker</h1>
-    <p class="hero-subtitle">
-        Temukan parfum yang paling cocok dengan seleramu.
-        Pilih parfum favoritmu, kami akan merekomendasikan yang paling mirip
-        menggunakan Cosine Similarity berbasis karakteristik aroma.
-    </p>
+<div class="fm-navbar">
+    <span class="fm-navbar-brand">Fragrance<span>.</span></span>
+    <span class="fm-navbar-pill">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+        AI-Powered Matching
+    </span>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── SIDEBAR ───────────────────────────────────────────────────────────────────
+
+# ─── HERO ─────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="hero-wrapper">
+    <div class="hero-eyebrow">Content-Based Filtering</div>
+    <h1 class="hero-title">
+        Temukan Aroma<br>
+        <em>Sempurnamu</em>
+    </h1>
+    <p class="hero-subtitle">
+        Pilih parfum favoritmu — algoritma kami akan menemukan
+        yang paling mirip dari 900+ koleksi, berdasarkan
+        karakteristik aroma, longevity, dan profil.
+    </p>
+    <div class="hero-divider"></div>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<span class="sidebar-brand">🧴 Fragrance</span>', unsafe_allow_html=True)
-    st.markdown('<span class="sidebar-tagline">Matchmaker · Content-Based AI</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sidebar-brand">Fragrance.</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sidebar-tagline">Matchmaker · Study Club 2026</span>', unsafe_allow_html=True)
     st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 
-    st.markdown("**🔍 Filter Parfum**")
-    st.caption("Filter daftar parfum sebelum memilih rekomendasi")
+    st.markdown('<span class="sidebar-section-label">Filter Koleksi</span>', unsafe_allow_html=True)
 
-    # ── Target Audience Filter
     selected_audience = st.selectbox(
-        "👥 Target Audience",
+        "Target Audience",
         options=["Semua"] + audiences,
         index=0,
         key="sel_audience"
     )
 
-    # ── Dynamic Category (depends on audience)
     if selected_audience == "Semua":
         df_filtered_1 = df_full.copy()
     else:
         df_filtered_1 = df_full[df_full['target_audience'] == selected_audience]
 
     avail_categories = ["Semua"] + sorted(df_filtered_1['category'].dropna().unique().tolist())
-
     selected_category = st.selectbox(
-        "🌸 Kategori Aroma",
+        "Kategori Aroma",
         options=avail_categories,
         index=0,
         key="sel_category"
     )
 
-    # ── Dynamic Longevity (depends on audience + category)
     if selected_category == "Semua":
         df_filtered_2 = df_filtered_1.copy()
     else:
         df_filtered_2 = df_filtered_1[df_filtered_1['category'] == selected_category]
 
     avail_longevities = ["Semua"] + sorted(df_filtered_2['longevity'].dropna().unique().tolist())
-
     selected_longevity = st.selectbox(
-        "⏱️ Longevity (Ketahanan)",
+        "Longevity",
         options=avail_longevities,
         index=0,
         key="sel_longevity"
     )
 
-    # ── Apply all filters
     df_view = df_filtered_2.copy()
     if selected_longevity != "Semua":
         df_view = df_view[df_view['longevity'] == selected_longevity]
 
     st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
-    st.markdown("**⚙️ Pengaturan Rekomendasi**")
+    st.markdown('<span class="sidebar-section-label">Pengaturan Rekomendasi</span>', unsafe_allow_html=True)
 
     top_n = st.slider(
-        "🎯 Jumlah Rekomendasi (Top-N)",
+        "Jumlah Rekomendasi (Top-N)",
         min_value=3,
         max_value=10,
         value=5,
@@ -624,90 +886,90 @@ with st.sidebar:
     )
 
     st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
-
-    # Stats chips
-    total = len(df_full)
+    total    = len(df_full)
     filtered = len(df_view)
     st.markdown(
-        f'<div class="info-chip">📊 {filtered:,} dari {total:,} parfum tersedia</div>',
+        f'<div class="info-chip">'
+        f'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.5">'
+        f'<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>'
+        f'</svg>'
+        f'{filtered:,} dari {total:,} parfum</div>',
         unsafe_allow_html=True
     )
 
 
-# ─── MAIN CONTENT ──────────────────────────────────────────────────────────────
-
-# Guard: empty state after filtering
+# ─── GUARD: Empty filter state ───────────────────────────────────────────────
 if df_view.empty:
     st.markdown("""
     <div class="welcome-box">
-        <span class="welcome-emoji">🔎</span>
-        <p class="welcome-title">Tidak Ada Parfum Ditemukan</p>
-        <p class="welcome-sub">
-            Filter yang kamu pilih tidak menghasilkan parfum apapun.<br>
-            Coba longgarkan filter di sidebar.
-        </p>
+        <svg class="welcome-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11 6.5A.5.5 0 0 1 11.5 6h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm-3 3.5a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1H8zm0 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1H8z"/>
+            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+        </svg>
+        <p class="welcome-title">Tidak Ada Parfum</p>
+        <p class="welcome-sub">Filter yang dipilih tidak menghasilkan parfum apapun. Coba longgarkan filter di sidebar.</p>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
 
-# ── Perfume Selector
+
+# ─── PERFUME SELECTOR ────────────────────────────────────────────────────────
 perfume_options = sorted(df_view['perfume'].dropna().unique().tolist())
 
-col_main, col_hint = st.columns([3, 1])
-with col_main:
+col_sel, col_tag = st.columns([4, 1])
+with col_sel:
     selected_perfume = st.selectbox(
-        "🧴 Pilih Parfum Kamu",
+        "Pilih Parfum",
         options=perfume_options,
         index=0,
         key="sel_perfume",
-        help="Daftar parfum telah disesuaikan dengan filter sidebar"
+        help="Daftar parfum disesuaikan dengan filter aktif"
     )
-with col_hint:
-    st.markdown("<br>", unsafe_allow_html=True)
+with col_tag:
     match_row = df_view[df_view['perfume'] == selected_perfume].iloc[0]
     st.markdown(
-        f'<div style="padding-top:10px;">'
-        f'<span class="rec-tag">{match_row["type"].upper()}</span> '
-        f'<span class="rec-tag">{match_row["category"]}</span>'
+        f'<div style="padding-top:1.8rem;">'
+        f'<span class="rec-tag">{match_row["type"].upper()}</span>&nbsp;'
+        f'<span class="rec-tag" style="color:var(--gold);border-color:rgba(202,138,4,0.3);background:var(--gold-light);">{match_row["category"]}</span>'
         f'</div>',
         unsafe_allow_html=True
     )
 
-# ── Selected Perfume Metric Cards
+
+# ─── SELECTED PERFUME PROFILE CARD ───────────────────────────────────────────
 row = df_view[df_view['perfume'] == selected_perfume].iloc[0]
 
+# Longevity display chip color
+lon_style = {
+    'light':  'background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);color:#92400e;',
+    'medium': 'background:rgba(14,165,233,0.1);border-color:rgba(14,165,233,0.3);color:#0369a1;',
+    'strong': 'background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);color:#991b1b;',
+}
+lon_chip = lon_style.get(row['longevity'], '')
+
 st.markdown(f"""
-<div class="metrics-grid">
-    <div class="metric-card">
-        <span class="metric-icon">🏷️</span>
-        <div class="metric-label">Brand</div>
-        <p class="metric-value">{row['brand']}</p>
-    </div>
-    <div class="metric-card">
-        <span class="metric-icon">🍶</span>
-        <div class="metric-label">Tipe</div>
-        <p class="metric-value">{row['type'].upper()}</p>
-    </div>
-    <div class="metric-card">
-        <span class="metric-icon">🌸</span>
-        <div class="metric-label">Kategori Aroma</div>
-        <p class="metric-value">{row['category']}</p>
-    </div>
-    <div class="metric-card">
-        <span class="metric-icon">👥</span>
-        <div class="metric-label">Target & Longevity</div>
-        <p class="metric-value">{row['target_audience']} · {row['longevity']}</p>
+<div class="profile-card">
+    <div class="profile-label">Parfum Terpilih</div>
+    <p class="profile-name">{row['perfume'].title()}</p>
+    <p class="profile-brand">{row['brand']}</p>
+    <div class="profile-meta">
+        <span class="profile-chip gold">{row['type'].upper()}</span>
+        <span class="profile-chip">{row['category']}</span>
+        <span class="profile-chip" style="{lon_chip}">{row['longevity'].title()} Longevity</span>
+        <span class="profile-chip">{row['target_audience'].title()}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Search Button
-search_clicked = st.button("🔍 Temukan Rekomendasi Terbaik", key="btn_search")
 
-# ─── RESULTS ───────────────────────────────────────────────────────────────────
+# ─── SEARCH BUTTON ───────────────────────────────────────────────────────────
+search_clicked = st.button("Temukan Rekomendasi", key="btn_search")
+
+
+# ─── RESULTS ─────────────────────────────────────────────────────────────────
 if search_clicked:
     try:
-        with st.spinner("⚗️ Menghitung kemiripan aroma..."):
+        with st.spinner("Menghitung kemiripan aroma..."):
             results = get_recommendations(
                 perfume_name=selected_perfume,
                 df=df_full,
@@ -718,63 +980,81 @@ if search_clicked:
         # Section header
         st.markdown(f"""
         <div class="section-header">
-            <h2 class="section-title">✨ Rekomendasi untuk "<em>{selected_perfume}</em>"</h2>
+            <h2 class="section-title">Rekomendasi</h2>
+            <span class="section-subtitle">untuk &ldquo;{selected_perfume.title()}&rdquo;</span>
             <span class="section-count">Top {len(results)}</span>
         </div>
         """, unsafe_allow_html=True)
 
         if results.empty:
-            st.warning("Tidak ada rekomendasi yang ditemukan. Coba parfum yang berbeda.")
+            st.warning("Tidak ada rekomendasi ditemukan. Coba parfum yang berbeda.")
         else:
-            # ── Render card grid via HTML ──────────────────────────────────────
+            # ── Build card grid HTML ────────────────────────────────────────
             cards_html = '<div class="rec-grid">'
 
             for rank, (_, r) in enumerate(results.iterrows(), start=1):
-                score = r['similarity_score']
-                bar_pct = int(score * 100)
+                score    = r['similarity_score']
+                bar_pct  = int(score * 100)
+                img_url  = get_placeholder_image(r['category'], r['perfume'])
 
-                # Longevity color
-                lon_colors = {
-                    'light':  ('#FACC15', '#78350F'),
-                    'medium': ('#60A5FA', '#1E3A5F'),
-                    'strong': ('#F87171', '#450A0A'),
-                }
-                l_bg, l_text = lon_colors.get(r['longevity'], ('#9CA3AF', '#1F2937'))
+                # Category tag with subtle tint
+                cat_lower = r['category'].lower()
+                if 'floral' in cat_lower:
+                    tag_style = 'background:rgba(236,72,153,0.08);border-color:rgba(236,72,153,0.2);color:#9d174d;'
+                elif 'woody' in cat_lower or 'wood' in cat_lower:
+                    tag_style = 'background:rgba(120,80,40,0.08);border-color:rgba(120,80,40,0.2);color:#713f12;'
+                elif 'oud' in cat_lower:
+                    tag_style = 'background:rgba(161,98,7,0.08);border-color:rgba(161,98,7,0.2);color:#78350f;'
+                elif 'fresh' in cat_lower or 'citrus' in cat_lower:
+                    tag_style = 'background:rgba(14,165,233,0.08);border-color:rgba(14,165,233,0.2);color:#0c4a6e;'
+                elif 'oriental' in cat_lower or 'amber' in cat_lower:
+                    tag_style = 'background:rgba(202,138,4,0.08);border-color:rgba(202,138,4,0.2);color:#713f12;'
+                else:
+                    tag_style = ''
 
-                # Audience color
-                aud_colors = {
-                    'male':   ('#3B82F6', '#1E3A5F'),
-                    'female': ('#EC4899', '#4A0017'),
-                    'unisex': ('#8B5CF6', '#2E1065'),
+                # Longevity badge
+                lon_map = {
+                    'light':  ('rgba(234,179,8,0.1)', 'rgba(234,179,8,0.25)', '#92400e'),
+                    'medium': ('rgba(14,165,233,0.1)', 'rgba(14,165,233,0.25)', '#0369a1'),
+                    'strong': ('rgba(239,68,68,0.08)', 'rgba(239,68,68,0.2)', '#991b1b'),
                 }
-                a_bg, a_text = aud_colors.get(r['target_audience'], ('#9CA3AF', '#1F2937'))
+                lon_bg, lon_border, lon_color = lon_map.get(
+                    r['longevity'], ('rgba(12,10,9,0.04)', 'var(--border)', 'var(--text-secondary)')
+                )
 
                 cards_html += (
                     f'<div class="rec-card">'
-                    f'<span class="rec-rank">#{rank}</span>'
-                    f'<div class="rec-score-bar-wrap">'
-                    f'<div class="rec-score-bar" style="width:{bar_pct}%;"></div>'
-                    f'</div>'
-                    f'<p class="rec-perfume">{r["perfume"]}</p>'
-                    f'<p class="rec-brand">{r["brand"]}</p>'
-                    f'<div class="rec-tags">'
-                    f'<span class="rec-tag">{r["type"].upper()}</span>'
-                    f'<span class="rec-tag" style="background:rgba(225,29,72,0.12);border-color:rgba(225,29,72,0.25);color:#fb7185;">{r["category"]}</span>'
-                    f'<span class="rec-tag" style="background:{l_bg}22;border-color:{l_bg}44;color:{l_bg};">⏱ {r["longevity"]}</span>'
-                    f'<span class="rec-tag" style="background:{a_bg}22;border-color:{a_bg}44;color:{a_bg};">👤 {r["target_audience"]}</span>'
-                    f'</div>'
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;">'
-                    f'<span class="rec-score-label">Similarity Score</span>'
-                    f'<span class="rec-score-val">{score:.4f}</span>'
-                    f'</div>'
+                    f'  <div class="rec-img-wrapper">'
+                    f'    <span class="rec-rank">#{rank:02d}</span>'
+                    f'    <img class="rec-img" src="{img_url}" alt="{r["perfume"]} by {r["brand"]}" loading="lazy">'
+                    f'  </div>'
+                    f'  <div class="rec-body">'
+                    f'    <div class="rec-score-bar-track">'
+                    f'      <div class="rec-score-bar-fill" style="width:{bar_pct}%;"></div>'
+                    f'    </div>'
+                    f'    <p class="rec-perfume">{r["perfume"].title()}</p>'
+                    f'    <p class="rec-brand">{r["brand"]}</p>'
+                    f'    <div class="rec-tags">'
+                    f'      <span class="rec-tag">{r["type"].upper()}</span>'
+                    f'      <span class="rec-tag" style="{tag_style}">{r["category"]}</span>'
+                    f'      <span class="rec-tag" style="background:{lon_bg};border-color:{lon_border};color:{lon_color};">'
+                    f'        {r["longevity"].title()}'
+                    f'      </span>'
+                    f'      <span class="rec-tag">{r["target_audience"].title()}</span>'
+                    f'    </div>'
+                    f'    <div class="rec-score-footer">'
+                    f'      <span class="rec-score-label">Similarity</span>'
+                    f'      <span class="rec-score-val">{score:.1%}</span>'
+                    f'    </div>'
+                    f'  </div>'
                     f'</div>'
                 )
 
             cards_html += '</div>'
             st.markdown(cards_html, unsafe_allow_html=True)
 
-            # ── Full Data Table (expandable) ───────────────────────────────────
-            with st.expander("📋 Lihat Tabel Lengkap Rekomendasi", expanded=False):
+            # ── Full data table ─────────────────────────────────────────────
+            with st.expander("Lihat Tabel Lengkap Rekomendasi", expanded=False):
                 display_df = results.copy()
                 display_df.index = display_df.index + 1
                 display_df.index.name = "Rank"
@@ -782,8 +1062,7 @@ if search_clicked:
                     "Brand", "Perfume", "Type",
                     "Category", "Audience", "Longevity", "Similarity Score"
                 ]
-                display_df["Similarity Score"] = display_df["Similarity Score"].map("{:.4f}".format)
-
+                display_df["Similarity Score"] = display_df["Similarity Score"].map("{:.2%}".format)
                 st.markdown('<div class="table-wrapper">', unsafe_allow_html=True)
                 st.dataframe(
                     display_df,
@@ -793,32 +1072,34 @@ if search_clicked:
                 st.markdown('</div>', unsafe_allow_html=True)
 
     except ValueError as e:
-        st.error(f"❌ {e}. Silakan pilih parfum yang berbeda.")
+        st.error(f"Parfum tidak ditemukan dalam dataset: {e}")
     except Exception as e:
-        st.error(f"⚠️ Terjadi kesalahan: {e}")
+        st.error(f"Terjadi kesalahan: {e}")
 
 else:
-    # ── Welcome / idle state
+    # ── IDLE / WELCOME STATE ────────────────────────────────────────────────
     st.markdown("""
     <div class="welcome-box">
-        <span class="welcome-emoji">🧴</span>
-        <p class="welcome-title">Siap Menemukan Parfummu?</p>
+        <svg class="welcome-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3zm0 2H5v14h14V6h-2v2H7V6zm2-2v2h6V4H9z"/>
+        </svg>
+        <p class="welcome-title">Siap Menemukan Aromamu?</p>
         <p class="welcome-sub">
-            Pilih parfum di atas, atur filter di sidebar,<br>
-            lalu tekan <strong style="color:#E11D48;">Temukan Rekomendasi Terbaik</strong> untuk memulai.
+            Pilih parfum di atas, atur filter di sidebar,
+            lalu tekan <strong>Temukan Rekomendasi</strong> untuk memulai.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-# ─── FOOTER ────────────────────────────────────────────────────────────────────
+
+# ─── FOOTER ──────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="text-align:center;margin-top:4rem;padding-top:2rem;border-top:1px solid rgba(255,255,255,0.08);">
-    <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:#4B5563;margin:0;">
-        🧴 <strong style="color:#6B7280;">Fragrance Matchmaker</strong> — 
-        Content-Based Filtering · CountVectorizer · Cosine Similarity<br>
-        <span style="font-size:11px;">
-            Dibuat oleh Tim DSBeginner: Torikh · Alif · Hasan · Study Club 2026
-        </span>
+<div style="text-align:center;margin-top:6rem;padding-top:2rem;border-top:1px solid rgba(12,10,9,0.06);">
+    <p style="font-family:'Jost',sans-serif;font-size:12px;color:#A8A29E;letter-spacing:0.06em;margin:0;">
+        FRAGRANCE MATCHMAKER &nbsp;&middot;&nbsp; Content-Based Filtering &nbsp;&middot;&nbsp; Cosine Similarity
+    </p>
+    <p style="font-family:'Jost',sans-serif;font-size:11px;color:#C7C3BF;letter-spacing:0.04em;margin:6px 0 0;">
+        Torikh &middot; Alif &middot; Hasan &nbsp;&mdash;&nbsp; Study Club DS Beginner 2026
     </p>
 </div>
 """, unsafe_allow_html=True)
